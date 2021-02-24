@@ -156,3 +156,10 @@ gehrmann_rouge_opennmt/rouge_baselines/pyrouge/
 *.tsv
 *.csv
 
+evaluation/summ_eval/stanford-corenlp-full-2018-10-05
+
+evaluation/summ_eval/stanford-corenlp-4.2.0
+evaluation/summ_eval/meteor-1.5.jar
+evaluation/*.out
+outputs/
+evaluation/summ_eval/embeddings

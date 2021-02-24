@@ -1,0 +1,78 @@
+
+----------- Installation instruciton -------------
+cd evaluation
+pip install -e .
+
+# comment out spacy requirement in setup.py
+
+python setup_finalize.py # mnually download the CoreNLP file and put it in the summ_eval folder
+
+Setup ROUGE? [Y/n]: y
+Please run the following command and add it to your startup script:
+ export ROUGE_HOME=/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/evaluation/summ_eval/ROUGE-1.5.5/
+Setup SuPERT? [Y/n]: y
+Please run the following command and add it to your startup script:
+ export PYTHONPATH=$PYTHONPATH:/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/evaluation/summ_eval/
+Download METEOR jar? [Y/n]: y
+Download embeddings for S3 and ROUGE-WE metrics? [Y/n]: y
+Downloading the embeddings; this may take a while
+Download CoreNLP for Syntactic metric? [Y/n]: y
+CORENLP already downloaded!
+
+
+######Errors
+ 'BertTokenizer' object has no attribute 'model_max_length'
+ the fix is to change max_len to model_max_length. "https://github.com/huggingface/transformers/issues/8739"
+or vice versa on older models
+####### Rouge setup
+
+rm WordNet-2.0.exc.db
+chmod 777 WordNet-2.0-Exceptions/buildExeptionDB.pl
+./WordNet-2.0-Exceptions/buildExeptionDB.pl ./WordNet-2.0-Exceptions ./smart_common_words.txt ./WordNet-2.0.exc.db
+
+# apt-get install libxml-parser-perl # not used for this setup
+
+
+###### QA Bert
+start_scores, end_scores = self.model(input_ids=input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask,return_dict=False)
+add return_dict=False, otherwise it returns a str object
+
+###### moverscore package
+# device = 'cuda'
+device = 'cpu'
+-----------------
+
+export ROUGE_HOME=/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/evaluation/summ_eval/ROUGE-1.5.5/
+export PYTHONPATH=$PYTHONPATH:/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/evaluation/summ_eval/
+export CORENLP_HOME=/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/evaluation/summ_eval/stanford-corenlp-4.2.0
+
+export CORENLP_HOME=/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/evaluation/summ_eval/stanford-corenlp-full-2018-10-05/
+
+python -m spacy validate
+
+
+pip install -U pip setuptools wheel
+pip install -U spacy
+python -m spacy download en_core_web_sm
+
+for file in `find . -name "*.jar"`; do export
+CLASSPATH="$CLASSPATH:`realpath $file`"; done
+
+sh run_standford_corenlp_server.sh
+python -m unittest discover
+
+
+---------------------
+
+python data_processing/pair_data.py --data_annotations <file-with-data-annotations> --story_files <dir-with-stories>
+
+python data_processing/pair_data.py --data_annotations external/data_annotations/model_annotations.aligned.jsonl --story_files external
+
+
+---------------- Cal scores
+calc-scores --config-file=evaluation/examples/basic.config --metrics "rouge, bert_score" --jsonl-file external/data_annotations/model_annotations.aligned.paired.jsonl --output-file rouge_bertscore.jsonl
+
+
+
+
+

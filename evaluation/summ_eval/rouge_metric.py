@@ -8,11 +8,15 @@ from pyrouge import Rouge155
 from summ_eval.metric import Metric
 from summ_eval.test_util import rouge_empty
 
-ROUGE_HOME = os.environ['ROUGE_HOME']
+# from set_path import set_path
+# set_path()
+# ROUGE_HOME = os.environ['ROUGE_HOME']
+ROUGE_HOME = os.environ.get("ROUGE_HOME", None)
+
 
 @gin.configurable
 class RougeMetric(Metric):
-    def __init__(self, rouge_dir=ROUGE_HOME, rouge_args=None, verbose=False):
+    def __init__(self, rouge_dir=None, rouge_args=None, verbose=False):
         """
         ROUGE metric
         Makes use of pyrouge: https://github.com/bheinzerling/pyrouge
@@ -25,7 +29,14 @@ class RougeMetric(Metric):
         """
         # 
         log_level = logging.ERROR if not verbose else None
-        self.r = Rouge155(rouge_dir=rouge_dir, rouge_args=rouge_args, log_level=log_level)
+        # self.r = Rouge155(rouge_dir=rouge_dir, rouge_args=rouge_args, log_level=log_level)
+        from set_path import set_path
+        set_path()
+        if not ROUGE_HOME:
+            rouge_dir = os.environ['ROUGE_HOME']
+
+        self.r = Rouge155(rouge_dir=rouge_dir, rouge_args=rouge_args)
+
         self.rouge_args = rouge_args
 
     def evaluate_example(self, summary, reference):

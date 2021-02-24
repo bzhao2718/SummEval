@@ -16,7 +16,9 @@ class QA_Bert():
 
     def predict(self, input_ids, token_type_ids, attention_mask):
 
-        start_scores, end_scores = self.model(input_ids=input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask)
+        # start_scores, end_scores = self.model(input_ids=input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask)
+
+        start_scores, end_scores = self.model(input_ids=input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask,return_dict=False)
 
         start_scores = torch.functional.F.softmax(start_scores, -1) * token_type_ids.float()
         end_scores = torch.functional.F.softmax(end_scores, -1) * token_type_ids.float()

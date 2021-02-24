@@ -4,24 +4,50 @@ import json
 import argparse
 from collections import defaultdict
 import gin
-#from summ_eval.test_util import metrics_description
+# from summ_eval.test_util import metrics_description
 from nltk.stem.snowball import SnowballStemmer
 from nltk.tokenize import RegexpTokenizer
 import spacy
+import os
 
-def cli_main():
-    #parser = argparse.ArgumentParser(description=metrics_description, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser = argparse.ArgumentParser(description="predictor")
-    parser.add_argument('--config-file', type=str, help='config file with metric parameters')
-    parser.add_argument('--metrics', type=str, help='comma-separated string of metrics')
+
+def default_args(parser):
+    # parser.add_argument('--config-file', type=str, default="../examples/basic.config",help='config file with metric parameters')
+    parser.add_argument('--config-file', type=str,
+                        default="/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/evaluation/examples/basic.config",
+                        help='config file with metric parameters')
+
+    parser.add_argument('--metrics', type=str, default="bert_score", help='comma-separated string of metrics')
     parser.add_argument('--aggregate', type=bool, help='whether to aggregate scores')
-    parser.add_argument('--jsonl-file', type=str, help='input jsonl file to score')
+    # parser.add_argument('--jsonl-file', default="external/data_annotations/model_annotations.aligned.paired.jsonl", type=str, help='input jsonl file to score')
+
+    parser.add_argument('--jsonl-file',
+                        default="/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/external/data_annotations/model_annotations.aligned.paired.jsonl",
+                        type=str, help='input jsonl file to score')
+
     parser.add_argument('--article-file', type=str, help='input article file')
     parser.add_argument('--summ-file', type=str, help='input summary file')
     parser.add_argument('--ref-file', type=str, help='input reference file')
-    parser.add_argument('--output-file', type=str, help='output file')
+    parser.add_argument('--output-file', default="out", type=str, help='output file')
     parser.add_argument('--eos', type=str, help='EOS for ROUGE (if reference not supplied as list)')
     args = parser.parse_args()
+    return args
+
+
+def cli_main():
+    # parser = argparse.ArgumentParser(description=metrics_description, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(description="predictor")
+    # parser.add_argument('--config-file', type=str, help='config file with metric parameters')
+    # parser.add_argument('--metrics', type=str, help='comma-separated string of metrics')
+    # parser.add_argument('--aggregate', type=bool, help='whether to aggregate scores')
+    # parser.add_argument('--jsonl-file', type=str, help='input jsonl file to score')
+    # parser.add_argument('--article-file', type=str, help='input article file')
+    # parser.add_argument('--summ-file', type=str, help='input summary file')
+    # parser.add_argument('--ref-file', type=str, help='input reference file')
+    # parser.add_argument('--output-file', type=str, help='output file')
+    # parser.add_argument('--eos', type=str, help='EOS for ROUGE (if reference not supplied as list)')
+    # args = parser.parse_args()
+    args = default_args(parser=parser)
 
     # =====================================
     # INITIALIZE METRICS
@@ -97,10 +123,6 @@ def cli_main():
         toks_needed.add("space")
     # =====================================
 
-
-
-
-
     # =====================================
     # READ INPUT
     print("Reading the input")
@@ -123,13 +145,17 @@ def cli_main():
                             bad_lines += 1
                             continue
                         summaries.append(data['decoded'])
-                        references.append(data['reference'])
+                        # references.append(data['reference'])
+                        if data.get("reference", None):
+                            references.append(data['reference'])
+                        else:  # there are 10 additional references added, the first is the orginal
+                            references.append(data["references"][0])
                         if "summaqa" in metrics or "stats" in metrics or "supert" in metrics or "blanc" in metrics:
                             try:
                                 articles.append(data['text'])
                             except:
                                 raise ValueError("You specified summaqa and stats, which" \
-                                    "require input articles, but we could not parse the file!")
+                                                 "require input articles, but we could not parse the file!")
                     except:
                         bad_lines += 1
         except Exception as e:
@@ -147,7 +173,7 @@ def cli_main():
     if "summaqa" in metrics or "stats" in metrics or "supert" in metrics or "blanc" in metrics:
         if args.article_file is None and len(articles) == 0:
             raise ValueError("You specified summaqa and stats, which" \
-                 "require input articles, but we could not parse the file!")
+                             "require input articles, but we could not parse the file!")
         if len(articles) > 0:
             pass
         else:
@@ -156,9 +182,6 @@ def cli_main():
     if len(ids) == 0:
         ids = list(range(0, len(summaries)))
     # =====================================
-
-
-
 
     # =====================================
     # TOKENIZATION
@@ -204,8 +227,10 @@ def cli_main():
         tokenizer = RegexpTokenizer(r'\w+')
         stemmer = SnowballStemmer("english")
         if isinstance(summaries[0], list):
-            summaries_stemmed = [[stemmer.stem(word) for word in tokenizer.tokenize(" ".join(summ))] for summ in summaries]
-            references_stemmed = [[stemmer.stem(word) for word in tokenizer.tokenize(" ".join(ref))] for ref in references]
+            summaries_stemmed = [[stemmer.stem(word) for word in tokenizer.tokenize(" ".join(summ))] for summ in
+                                 summaries]
+            references_stemmed = [[stemmer.stem(word) for word in tokenizer.tokenize(" ".join(ref))] for ref in
+                                  references]
         else:
             summaries_stemmed = [[stemmer.stem(word) for word in tokenizer.tokenize(summ)] for summ in summaries]
             references_stemmed = [[stemmer.stem(word) for word in tokenizer.tokenize(ref)] for ref in references]
@@ -239,15 +264,13 @@ def cli_main():
         inputs_space = articles
     # =====================================
 
-
-
     # =====================================
     # GET SCORES
     if args.aggregate:
         final_output = dict()
     else:
         final_output = defaultdict(lambda: defaultdict(int))
-    #import pdb;pdb.set_trace()
+    # import pdb;pdb.set_trace()
     for metric, metric_cls in metrics_dict.items():
         print(f"Calculating scores for the {metric} metric.")
         try:
@@ -266,7 +289,8 @@ def cli_main():
                 if metric == "summaqa":
                     output = metric_cls.evaluate_batch(summaries_space, input_spacy, aggregate=args.aggregate)
                 elif metric == "stats":
-                    output = metric_cls.evaluate_batch(summaries_spacy_stats, input_spacy_stats, aggregate=args.aggregate)
+                    output = metric_cls.evaluate_batch(summaries_spacy_stats, input_spacy_stats,
+                                                       aggregate=args.aggregate)
                 elif metric in ('supert', 'blanc'):
                     output = metric_cls.evaluate_batch(summaries_space, inputs_space, aggregate=args.aggregate)
             if args.aggregate:
@@ -280,17 +304,14 @@ def cli_main():
             print(f"An error was encountered with the {metric} metric.")
     # =====================================
 
-
-
-
-
-
     # =====================================
     # OUTPUT SCORES
     metrics_str = "_".join(metrics)
-    #json_file_end = args.jsonl_file.split("/")[-1]
+    # json_file_end = args.jsonl_file.split("/")[-1]
     json_file_end = args.jsonl_file.replace("/", "_")
-    with open(f"outputs/{args.output_file}_{json_file_end}_{metrics_str}.jsonl", "w") as outputf:
+    output_path = f"output_{metrics_str}.jsonl"
+    # with open(f"outputs/{args.output_file}_{json_file_end}_{metrics_str}.jsonl", "w") as outputf:
+    with open(output_path, "w") as outputf:
         if args.aggregate:
             json.dump(final_output, outputf)
         else:
@@ -300,6 +321,43 @@ def cli_main():
                 outputf.write("\n")
     # =====================================
 
+
+def parse_jsonl():
+    print("Reading the input")
+    ids = []
+    articles = []
+    references = []
+    summaries = []
+    bad_lines = 0
+    if args.jsonl_file is not None:
+        try:
+            with open(args.jsonl_file) as inputf:
+                for count, line in enumerate(inputf):
+                    try:
+                        data = json.loads(line)
+                        try:
+                            ids.append(data['id'])
+                        except:
+                            pass
+                        if len(data['decoded']) == 0:
+                            bad_lines += 1
+                            continue
+                        summaries.append(data['decoded'])
+                        references.append(data['reference'])
+                        if "summaqa" in metrics or "stats" in metrics or "supert" in metrics or "blanc" in metrics:
+                            try:
+                                articles.append(data['text'])
+                            except:
+                                raise ValueError("You specified summaqa and stats, which" \
+                                                 "require input articles, but we could not parse the file!")
+                    except:
+                        bad_lines += 1
+        except Exception as e:
+            print("Input did not match required format")
+            print(e)
+            sys.exit()
+        print(f"This many bad lines encountered during loading: {bad_lines}")
+
+
 if __name__ == '__main__':
     cli_main()
-

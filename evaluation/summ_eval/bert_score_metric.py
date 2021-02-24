@@ -6,7 +6,7 @@ from summ_eval.metric import Metric
 
 @gin.configurable
 class BertScoreMetric(Metric):
-    def __init__(self, lang='en', model_type='bert-base-uncased', num_layers=8, verbose=False, idf=False,\
+    def __init__(self, lang='en', model_type='bert-base-uncased', num_layers=8, verbose=False, idf=False, \
                  nthreads=4, batch_size=64, rescale_with_baseline=False):
         """
         BERT-Score metric
@@ -47,8 +47,13 @@ class BertScoreMetric(Metric):
                                                 nthreads=self.nthreads, lang=self.lang, return_hash=True,
                                                 rescale_with_baseline=self.rescale_with_baseline)
         print(f"hash_code: {hash_code}")
-        score = [{"bert_score_precision": p.cpu().item(), "bert_score_recall": r.cpu().item(), "bert_score_f1": \
-                 f.cpu().item()} for (p, r, f) in all_preds]
+        if isinstance(all_preds, tuple):
+            p, r, f = all_preds
+            score = [{"bert_score_precision": p.cpu().item(), "bert_score_recall": r.cpu().item(), "bert_score_f1": \
+                f.cpu().item()}]
+        else:
+            score = [{"bert_score_precision": p.cpu().item(), "bert_score_recall": r.cpu().item(), "bert_score_f1": \
+                f.cpu().item()} for (p, r, f) in all_preds]
         return score
 
     def evaluate_batch(self, summaries, references, aggregate=True):
@@ -67,7 +72,7 @@ class BertScoreMetric(Metric):
             return scores
         else:
             cur_items = [{"bert_score_precision": p.cpu().item(), "bert_score_recall": r.cpu().item(), \
-                         "bert_score_f1": f.cpu().item()} for (p, r, f) in list(zip(*all_preds))]
+                          "bert_score_f1": f.cpu().item()} for (p, r, f) in list(zip(*all_preds))]
             return cur_items
 
     @property

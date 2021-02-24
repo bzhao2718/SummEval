@@ -9,7 +9,7 @@ from summ_eval.metric import Metric
 
 @gin.configurable
 class BlancMetric(Metric):
-    def __init__(self, device='cuda', inference_batch_size=128, finetune_batch_size=24, use_tune=True):
+    def __init__(self, device='cpu', inference_batch_size=128, finetune_batch_size=24, use_tune=True):
         self.device = device
         self.inference_batch_size = inference_batch_size
         self.finetune_batch_size = finetune_batch_size
@@ -26,7 +26,7 @@ class BlancMetric(Metric):
     def evaluate_batch(self, summaries, input_texts, aggregate=True):
         corpus_score_dict = Counter()
         if self.use_tune:
-            blanc_mod = BlancTune(device='cuda', inference_batch_size=self.inference_batch_size, finetune_batch_size=self.finetune_batch_size)
+            blanc_mod = BlancTune(device='cpu', inference_batch_size=self.inference_batch_size, finetune_batch_size=self.finetune_batch_size)
         else:
             blanc_mod = BlancTune(device=self.device, inference_batch_size=self.inference_batch_size)
             
