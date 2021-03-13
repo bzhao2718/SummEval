@@ -12,17 +12,30 @@ import os
 
 
 def default_args(parser):
+    all_metrics = "rouge, bert_score, mover_score,chrf,meteor,bleu,cider,rouge_we,s3,stats,sms,summaqa,syntactic,supert,blanc"
+    metric2 = "chrf,meteor,bleu,cider,bert_score, mover_score,rouge,rouge_we"
+    metric3 = "rouge_we"
+    metric5 = "stats"
+    metric4 = "sms"
+    metric6 = "supert"
+    metric7 = "syntactic"
+    m_rerun1 = "blanc,summaqa"
+    m_rerun2 = "s3"
+
     # parser.add_argument('--config-file', type=str, default="../examples/basic.config",help='config file with metric parameters')
     parser.add_argument('--config-file', type=str,
                         default="/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/evaluation/examples/basic.config",
                         help='config file with metric parameters')
 
-    parser.add_argument('--metrics', type=str, default="bert_score", help='comma-separated string of metrics')
+    parser.add_argument('--metrics', type=str, default=metric3, help='comma-separated string of metrics')
     parser.add_argument('--aggregate', type=bool, help='whether to aggregate scores')
     # parser.add_argument('--jsonl-file', default="external/data_annotations/model_annotations.aligned.paired.jsonl", type=str, help='input jsonl file to score')
 
+    abs_path="/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/external/experiments/all_data/realsumm/recalculated_realsumm/json_files/realsumm_data_abs.jsonl"
+    ext_path = "/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/external/experiments/all_data/realsumm/recalculated_realsumm/json_files/realsumm_data_ext.jsonl"
+    default_path = "/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/external/data_annotations/model_annotations.aligned.paired.jsonl"
     parser.add_argument('--jsonl-file',
-                        default="/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/external/data_annotations/model_annotations.aligned.paired.jsonl",
+                        default=abs_path,
                         type=str, help='input jsonl file to score')
 
     parser.add_argument('--article-file', type=str, help='input article file')
@@ -310,6 +323,7 @@ def cli_main():
     # json_file_end = args.jsonl_file.split("/")[-1]
     json_file_end = args.jsonl_file.replace("/", "_")
     output_path = f"output_{metrics_str}.jsonl"
+    print(f"saving to {output_path}")
     # with open(f"outputs/{args.output_file}_{json_file_end}_{metrics_str}.jsonl", "w") as outputf:
     with open(output_path, "w") as outputf:
         if args.aggregate:
@@ -320,43 +334,6 @@ def cli_main():
                 json.dump(value, outputf)
                 outputf.write("\n")
     # =====================================
-
-
-def parse_jsonl():
-    print("Reading the input")
-    ids = []
-    articles = []
-    references = []
-    summaries = []
-    bad_lines = 0
-    if args.jsonl_file is not None:
-        try:
-            with open(args.jsonl_file) as inputf:
-                for count, line in enumerate(inputf):
-                    try:
-                        data = json.loads(line)
-                        try:
-                            ids.append(data['id'])
-                        except:
-                            pass
-                        if len(data['decoded']) == 0:
-                            bad_lines += 1
-                            continue
-                        summaries.append(data['decoded'])
-                        references.append(data['reference'])
-                        if "summaqa" in metrics or "stats" in metrics or "supert" in metrics or "blanc" in metrics:
-                            try:
-                                articles.append(data['text'])
-                            except:
-                                raise ValueError("You specified summaqa and stats, which" \
-                                                 "require input articles, but we could not parse the file!")
-                    except:
-                        bad_lines += 1
-        except Exception as e:
-            print("Input did not match required format")
-            print(e)
-            sys.exit()
-        print(f"This many bad lines encountered during loading: {bad_lines}")
 
 
 if __name__ == '__main__':

@@ -135,9 +135,9 @@ experimental/*
 # Weights and Biases logs
 wandb/
 
-src/wodeutil/
-src/wodeutil/*
-*/wodeutil/
+#src/wodeutil/
+#src/wodeutil/*
+#*/wodeutil/
 */gitignored/
 */gitignored/*
 gitignored/
@@ -147,7 +147,7 @@ temp/
 temp/*
 external/
 external/*
-wodeutil/
+#wodeutil/
 
 aligned/*
 scores_dicts/test*
@@ -163,3 +163,5 @@ evaluation/summ_eval/meteor-1.5.jar
 evaluation/*.out
 outputs/
 evaluation/summ_eval/embeddings
+experiments/
+*.pt

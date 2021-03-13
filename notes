@@ -42,11 +42,8 @@ add return_dict=False, otherwise it returns a str object
 device = 'cpu'
 -----------------
 
-export ROUGE_HOME=/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/evaluation/summ_eval/ROUGE-1.5.5/
-export PYTHONPATH=$PYTHONPATH:/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/evaluation/summ_eval/
-export CORENLP_HOME=/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/evaluation/summ_eval/stanford-corenlp-4.2.0
 
-export CORENLP_HOME=/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/evaluation/summ_eval/stanford-corenlp-full-2018-10-05/
+# export CORENLP_HOME=/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/evaluation/summ_eval/stanford-corenlp-full-2018-10-05/
 
 python -m spacy validate
 
@@ -58,8 +55,15 @@ python -m spacy download en_core_web_sm
 for file in `find . -name "*.jar"`; do export
 CLASSPATH="$CLASSPATH:`realpath $file`"; done
 
-sh run_standford_corenlp_server.sh
+
 python -m unittest discover
+
+---------------
+export ROUGE_HOME=/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/evaluation/summ_eval/ROUGE-1.5.5/
+export PYTHONPATH=$PYTHONPATH:/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/evaluation/summ_eval/
+export CORENLP_HOME=/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/evaluation/summ_eval/stanford-corenlp-4.2.0
+
+sh run_standford_corenlp_server.sh
 
 
 ---------------------
@@ -72,7 +76,7 @@ python data_processing/pair_data.py --data_annotations external/data_annotations
 ---------------- Cal scores
 calc-scores --config-file=evaluation/examples/basic.config --metrics "rouge, bert_score" --jsonl-file external/data_annotations/model_annotations.aligned.paired.jsonl --output-file rouge_bertscore.jsonl
 
-
+conda install -c conda-forge spacy=2.2.0
 
 
 

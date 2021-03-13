@@ -40,6 +40,7 @@ class DataStatsMetric(Metric):
 
     def evaluate_example(self, summary, input_text):
         if self.tokenize:
+            # _en = spacy.load("en_core_web_sm")
             input_text = _en(input_text, disable=["tagger", "parser", "ner", "textcat"])
             input_text = [tok.text for tok in input_text]
             summary = _en(summary, disable=["tagger", "parser", "ner", "textcat"])
