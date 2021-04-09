@@ -4,7 +4,7 @@ from collections import Counter
 from multiprocessing import Pool
 import gin
 from summ_eval.metric import Metric
-from summ_eval.s3_utils import S3, load_embeddings
+from summ_eval.s3_utils import S3, load_embeddings, JS_eval
 
 dirname = os.path.dirname(__file__)
 
@@ -12,7 +12,7 @@ dirname = os.path.dirname(__file__)
 @gin.configurable
 class S3Metric(Metric):
     def __init__(self, emb_path=os.path.join(dirname, './embeddings/deps.words'), \
-        model_folder=os.path.join(dirname, './models/en/'), n_workers=24, tokenize=True):
+                 model_folder=os.path.join(dirname, './models/en/'), n_workers=24, tokenize=True):
         """
         S3 metric
         Taken from https://github.com/UKPLab/emnlp-ws-2017-s3/tree/b524407ada525c81ceacd2590076e20103213e3b
@@ -43,7 +43,19 @@ class S3Metric(Metric):
         score_dict = {"s3_pyr": score[0], "s3_resp": score[1]}
         return score_dict
 
-    def evaluate_batch(self, summaries, references, aggregate=False):
+    def get_JS(self, summary, reference):
+        if not isinstance(reference, list):
+            reference = [reference]
+        if not isinstance(summary, list):
+            summary = [summary]
+        if len(reference) == 1 and isinstance(reference[0], str):
+            reference = [reference]
+        js1 = JS_eval(summary, reference, 1, self.tokenize)
+        js2 = JS_eval(summary, reference, 2, self.tokenize)
+        score_dict = {"JS-1": js1, "JS-2": js2}
+        return score_dict
+
+    def evaluate_batch(self, summaries, references, aggregate=False): # this is original evaluate_batch method
         p = Pool(processes=self.n_workers)
         results = p.starmap(self.evaluate_example, zip(summaries, references))
         p.close()
@@ -56,6 +68,21 @@ class S3Metric(Metric):
             return corpus_score_dict
         else:
             return results
+
+    def evaluate_JS_batch(self, summaries, references, aggregate=False):
+        p = Pool(processes=self.n_workers)
+        results = p.starmap(self.get_JS, zip(summaries, references))
+        p.close()
+        if aggregate:
+            corpus_score_dict = Counter()
+            for x in results:
+                corpus_score_dict.update(x)
+            for key in corpus_score_dict.keys():
+                corpus_score_dict[key] /= float(len(summaries))
+            return corpus_score_dict
+        else:
+            return results
+
 
     @property
     def supports_multi_ref(self):

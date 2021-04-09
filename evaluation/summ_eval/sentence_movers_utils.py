@@ -14,7 +14,7 @@ from nltk.corpus import stopwords
 stop_words = set(stopwords.words('english'))
 
 print("loading spacy")
-nlp = spacy.load('en_core_web_md')
+nlp = spacy.load('en_core_web_sm')
 
 def get_sim(doc, text, wordrep, model, metric):
     [ref_ids, hyp_ids], rep_map = get_embeddings(doc, text, wordrep, model, metric)
@@ -47,7 +47,7 @@ def tokenize_texts(inLines, WORD_REP, tokenize):
         text_doc = []
 
         for i in range(2):  # iterate over ref and hyp
-            text = doc[i]
+            text = doc[i].text
             if tokenize:
                 sent_list = nlp(text, disable=["tagger", "ner", "textcat"]).sents
             else:

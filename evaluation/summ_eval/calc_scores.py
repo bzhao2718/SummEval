@@ -27,7 +27,7 @@ def default_args(parser):
                         default="/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/evaluation/examples/basic.config",
                         help='config file with metric parameters')
 
-    parser.add_argument('--metrics', type=str, default=metric3, help='comma-separated string of metrics')
+    parser.add_argument('--metrics', type=str, default=m_rerun2, help='comma-separated string of metrics')
     parser.add_argument('--aggregate', type=bool, help='whether to aggregate scores')
     # parser.add_argument('--jsonl-file', default="external/data_annotations/model_annotations.aligned.paired.jsonl", type=str, help='input jsonl file to score')
 
@@ -35,7 +35,7 @@ def default_args(parser):
     ext_path = "/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/external/experiments/all_data/realsumm/recalculated_realsumm/json_files/realsumm_data_ext.jsonl"
     default_path = "/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/external/data_annotations/model_annotations.aligned.paired.jsonl"
     parser.add_argument('--jsonl-file',
-                        default=abs_path,
+                        default=default_path,
                         type=str, help='input jsonl file to score')
 
     parser.add_argument('--article-file', type=str, help='input article file')
@@ -163,7 +163,9 @@ def cli_main():
                             references.append(data['reference'])
                         else:  # there are 10 additional references added, the first is the orginal
                             references.append(data["references"][0])
-                        if "summaqa" in metrics or "stats" in metrics or "supert" in metrics or "blanc" in metrics:
+                        # if "summaqa" in metrics or "stats" in metrics or "supert" in metrics or "blanc" in metrics:
+                        # remove stats
+                        if "summaqa" in metrics  or "supert" in metrics or "blanc" in metrics:
                             try:
                                 articles.append(data['text'])
                             except:
@@ -183,7 +185,8 @@ def cli_main():
     if args.ref_file is not None:
         with open(args.ref_file) as inputf:
             references = inputf.read().splitlines()
-    if "summaqa" in metrics or "stats" in metrics or "supert" in metrics or "blanc" in metrics:
+    # if "summaqa" in metrics or "stats" in metrics or "supert" in metrics or "blanc" in metrics:
+    if "summaqa" in metrics  or "supert" in metrics or "blanc" in metrics:
         if args.article_file is None and len(articles) == 0:
             raise ValueError("You specified summaqa and stats, which" \
                              "require input articles, but we could not parse the file!")
@@ -251,7 +254,8 @@ def cli_main():
         references_stemmed = [" ".join(ref) for ref in references_stemmed]
 
     if "spacy" in toks_needed:
-        nlp = spacy.load('en_core_web_md')
+        nlp = spacy.load('en_core_web_sm')
+        # nlp = spacy.load('en_core_web_md')
         disable = ["tagger", "textcat"]
         if "summaqa" not in metrics:
             disable.append("ner")
@@ -266,13 +270,22 @@ def cli_main():
                 references_spacy = [nlp(" ".join(text), disable=disable) for text in references]
             else:
                 references_spacy = [nlp(text, disable=disable) for text in references]
+            # this is original for summaqa and stats
+        # if "summaqa" in metrics or "stats" in metrics:
+        #     if isinstance(articles[0], list):
+        #         input_spacy = [nlp(" ".join(text), disable=disable) for text in articles]
+        #     else:
+        #         input_spacy = [nlp(text, disable=disable) for text in articles]
+        #     if "stats" in metrics:
+        #         input_spacy_stats = [[tok.text for tok in article] for article in input_spacy]
+        # use reference as article for stats
         if "summaqa" in metrics or "stats" in metrics:
-            if isinstance(articles[0], list):
-                input_spacy = [nlp(" ".join(text), disable=disable) for text in articles]
+            if isinstance(references[0], list):
+                input_spacy = [nlp(" ".join(text), disable=disable) for text in references]
             else:
-                input_spacy = [nlp(text, disable=disable) for text in articles]
+                input_spacy = [nlp(text, disable=disable) for text in references]
             if "stats" in metrics:
-                input_spacy_stats = [[tok.text for tok in article] for article in input_spacy]
+                input_spacy_stats = [[tok.text for tok in ref] for ref in input_spacy]
     if "supert" in metrics or "blanc" in metrics:
         inputs_space = articles
     # =====================================

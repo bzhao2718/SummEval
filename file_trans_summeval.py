@@ -258,10 +258,12 @@ def create_abs_ext_from_all_df():
 
 def do_add_scores_to_df():
     # score_path = "/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/external/experiments/all_data/summeval/score_files/output_rouge_we1.jsonl"
-    score_path = "/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/external/experiments/all_data/summeval/score_files/output_rouge_we2.jsonl"
-    df = load_df(summeval_data_all_with_s3_path)
+    score_path = "/evaluation/summ_eval/output_JS12.jsonl"
+
+    df_path = summeval_data_all_new_JS
+    df = load_df(df_path)
     df = add_scores_to_df(df, fp=score_path)
-    df.to_csv(summeval_data_all_with_s3_path, index=False)
+    df.to_csv(df_path, index=False)
 
 
 def do_add_scores_to_df_from_dir():
@@ -269,14 +271,14 @@ def do_add_scores_to_df_from_dir():
     collect scores.jsonl from a dir and save the collectd scores to df
     """
     # # ext scores
-    # score_dir = "/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/external/experiments/all_data/realsumm/recalculated_realsumm/json_files/scores/ext"
-    # data_path = "/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/external/experiments/all_data/realsumm/amr_splitted_measure/realsumm_ext_all_metrics.csv"
-    # save_to = "/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/external/experiments/all_data/realsumm/recalculated_realsumm/realsumm_ext_all.csv"
+    score_dir = "/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/external/experiments/all_data/realsumm/recalculated_realsumm/json_files/scores/ext"
+    data_path = "/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/external/experiments/all_data/realsumm/amr_splitted_measure/realsumm_ext_all_metrics.csv"
+    save_to = "/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/external/experiments/all_data/realsumm/recalculated_realsumm/realsumm_ext_all.csv"
 
     # abs
-    score_dir = "/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/external/experiments/all_data/realsumm/recalculated_realsumm/json_files/scores/abs"
-    data_path = "/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/external/experiments/all_data/realsumm/amr_splitted_measure/realsumm_abs_all_metrics.csv"
-    save_to = "/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/external/experiments/all_data/realsumm/recalculated_realsumm/realsumm_abs_all.csv"
+    # score_dir = "/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/external/experiments/all_data/realsumm/recalculated_realsumm/json_files/scores/abs"
+    # data_path = "/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/external/experiments/all_data/realsumm/amr_splitted_measure/realsumm_abs_all_metrics.csv"
+    # save_to = "/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/external/experiments/all_data/realsumm/recalculated_realsumm/realsumm_abs_all.csv"
 
     score_files = get_files_in_dir(score_dir)
     df = load_df(data_path)
@@ -308,4 +310,4 @@ if __name__ == '__main__':
     # do_split_by_model()
     # example_collect_scores()
     # do_split_by_model()
-    do_add_scores_to_df_from_dir()
+    do_add_scores_to_df()

@@ -153,11 +153,24 @@ class MetricScorer():
             stats = self.txt_stats.evaluate_example(cand, ref)
             return stats
 
-    def get_s3(self, cand, ref):
+    def get_s3(self, cand, ref, batch_mode=False):
         if cand and ref:
             if not self.s3:
                 self.s3 = S3Metric()
-            score = self.s3.evaluate_example(cand, ref)
+            if batch_mode:
+                score = self.s3.evaluate_batch(cand, ref)
+            else:
+                score = self.s3.evaluate_example(cand, ref)
+            return score
+
+    def get_JS(self, cand, ref, batch_mode=False):
+        if cand and ref:
+            if not self.s3:
+                self.s3 = S3Metric()
+            if batch_mode:
+                score = self.s3.evaluate_JS_batch(cand, ref)
+            else:
+                score = self.s3.get_JS(cand, ref)
             return score
 
     def get_sent_mover(self, cands, refs, wordrep='glove', metric_type='sms', batch_mode=False):
@@ -233,6 +246,11 @@ class MetricScorer():
                 for score in score_dict:
                     for k, v in score.items():
                         results[k].append(v)
+
+    def add_JS_to_results(self, cand: str, ref: str, results: defaultdict):
+        if cand and ref:
+            js_dict = scorer.get_JS(cand, ref, batch_mode=True)
+            self.add_metric_score(js_dict, results=results)
 
     def add_scores_to_results(self, cand: str, ref: str, results: defaultdict, include_rouge=True,
                               include_bertscore=True, include_sent_mover=True, include_rwe=True, \
@@ -330,7 +348,7 @@ class MetricScorer():
                 print(
                     f"................ append batch results and save it to {save_to} ...............")
 
-    def cal_scores_from_csv(self, src_path="", save_to="", clean_text=False):
+    def cal_scores_from_csv(self, src_path="", save_to="", clean_text=False, cand_col="cand", ref_col="ref"):
         """
         return a dataframe contains the calculated scores
         save to the save_to path if it is specified
@@ -338,8 +356,8 @@ class MetricScorer():
         """
         if src_path:
             df = load_df(src_path)
-            cands = df['cand'].values.tolist()
-            refs = df['ref'].values.tolist()
+            cands = df[cand_col].values.tolist()
+            refs = df[ref_col].values.tolist()
             if cands and refs:
                 results = defaultdict(list)
                 assert len(cands) == len(refs)
@@ -350,6 +368,62 @@ class MetricScorer():
                         cand = clean_cnn_text(cand, remove_newline=True, clean_sep=True)
                         ref = clean_cnn_text(ref, remove_newline=True, clean_sep=True)
                     self.add_scores_to_results(cand, ref, results)
+                    self.add_JS_to_results(cand, ref, results=results)
+                for k, v in results.items():
+                    df[k] = v
+                print(f"................ finish calculating scores for {len(cands)} cand ref pair(s) ................")
+                if save_to:
+                    df.to_csv(save_to)
+                    print(
+                        f"................ append results and save it to {save_to} ...............")
+
+    def cal_JS_scores_from_csv(self, src_path="", save_to="", clean_text=False, cand_col="cand", ref_col="ref"):
+        """
+        return a dataframe contains the calculated scores
+        save to the save_to path if it is specified
+        assume the cand summary is under column 'cand' and reference summary is under column 'ref'
+        """
+        if src_path:
+            df = load_df(src_path)
+            cands = df[cand_col].values.tolist()
+            refs = df[ref_col].values.tolist()
+            if cands and refs:
+                results = defaultdict(list)
+                assert len(cands) == len(refs)
+                "cands and refs should be of the same length"
+                print(f"................ start calculating scores for {len(cands)} cand ref pair(s) ................")
+                for cand, ref in zip(cands, refs):
+                    if clean_text:
+                        cand = clean_cnn_text(cand, remove_newline=True, clean_sep=True)
+                        ref = clean_cnn_text(ref, remove_newline=True, clean_sep=True)
+                    self.add_JS_to_results(cand, ref, results=results)
+                for k, v in results.items():
+                    df[k] = v
+                print(f"................ finish calculating scores for {len(cands)} cand ref pair(s) ................")
+                if save_to:
+                    df.to_csv(save_to)
+                    print(
+                        f"................ append results and save it to {save_to} ...............")
+
+    def cal_JS_scores_from_df(self, df, save_to="", clean_text=False, cand_col="cand", ref_col="ref"):
+        """
+        return a dataframe contains the calculated scores
+        save to the save_to path if it is specified
+        assume the cand summary is under column 'cand' and reference summary is under column 'ref'
+        """
+        if not df is None:
+            cands = df[cand_col].values.tolist()
+            refs = df[ref_col].values.tolist()
+            if cands and refs:
+                results = defaultdict(list)
+                assert len(cands) == len(refs)
+                "cands and refs should be of the same length"
+                print(f"................ start calculating scores for {len(cands)} cand ref pair(s) ................")
+                for cand, ref in zip(cands, refs):
+                    if clean_text:
+                        cand = clean_cnn_text(cand, remove_newline=True, clean_sep=True)
+                        ref = clean_cnn_text(ref, remove_newline=True, clean_sep=True)
+                    self.add_JS_to_results(cand, ref, results=results)
                 for k, v in results.items():
                     df[k] = v
                 print(f"................ finish calculating scores for {len(cands)} cand ref pair(s) ................")
@@ -447,6 +521,16 @@ def example_rouge(scorer: MetricScorer, candidate="", reference=""):
         # rouge_dict = scorer.get_rouge(cand1_list, ref1_list,batch_mode=True)
         print("rouge_dict: ")
         print(rouge_dict)
+
+
+def example_js_eval(scorer: MetricScorer, candidate="", reference=""):
+    if scorer:
+        cand_cnn1 = "paul merson was brought on with only seven minutes remaining in his team 's 0-0 draw with burnley . andros townsend scored the tottenham midfielder in the 89th minute . paul merson had another dig at andros townsend after his appearance . the midfielder had been brought on to the england squad last week . click here for all the latest arsenal news news ."
+        cand_cnn2 = "paul merson has restarted his row with andros townsend . the tottenham midfielder was brought on with only seven minutes remaining in his team 's 0-0 draw with burnley . andros townsend scores england 's equaliser in their 1-1 friendly draw with italy in turin ."
+        cand_cnn3 = "paul merson has restarted his row with andros townsend after the tottenham midfielder was brought on with only seven minutes remaining in his team 's 0-0 draw with burnley on sunday . townsend was brought on in the 83rd minute for tottenham as they drew 0-0 against burnley . townsend hit back at merson on twitter after scoring for england against italy ."
+        ref_cnn1 = "Andros Townsend an 83rd minute sub in Tottenham's draw with Burnley. He was unable to find a winner as the game ended without a goal. Townsend had clashed with Paul Merson last week over England call-up."
+        js_dict = scorer.get_JS([cand_cnn1, cand_cnn2, cand_cnn3], [ref_cnn1, ref_cnn1, ref_cnn1], batch_mode=True)
+        print(f"js_dict: {js_dict}")
 
 
 def example_rouge_we(scorer: MetricScorer, candidate="", reference=""):
@@ -557,7 +641,7 @@ def example_stats(scorer: MetricScorer):
 
 
 def example_s3(scorer: MetricScorer):
-    score = scorer.get_s3(cand1_newline, ref1_newline)
+    score = scorer.get_s3([cand1_newline], [ref1_newline], batch_mode=True)
     print(score)
 
 
@@ -585,11 +669,17 @@ def example_sent(scorer: MetricScorer):
 #     "But the victim's brother says he can't think of anyone who would want to hurt him, saying, \"Things were finally going well for him.\""
 # ]
 
-def cal_scores_df(scorer: MetricScorer):
+def cal_scores_df_all(scorer: MetricScorer):
     src_path = "/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/external/experiments/examples/example_with_scores/abs_presumm_ext_abs.csv"
     # results = scorer.cal_scores_from_csv(src_path=src_path, save_to=src_path)
     src2 = "/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/external/experiments/examples/example_with_scores/ext_bart_out_ext.csv"
-    scorer.cal_scores_from_csv(src_path=src2, save_to=src2)
+    summeval_path = "/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/external/experiments/all_data/summeval/models_with_docid/with_s3/abs_ext_mix/summeval_mix_all_metrics.csv"
+    save_to = "/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/external/experiments/all_data/summeval/models_with_docid/with_s3/abs_ext_mix/newJS_summeval_mix_all_metrics.csv"
+    # scorer.cal_scores_from_csv(src_path=summeval_path, save_to=save_to, clean_text=False, cand_col="decoded",
+    #                            ref_col="reference")
+    scorer.cal_JS_scores_from_csv(src_path=summeval_path, save_to=save_to, clean_text=False, cand_col="decoded",
+                                  ref_col="reference")
+    print(f"************ Done calucation *****************")
 
 
 def cal_scores_for_realsumm(scorer: MetricScorer):
@@ -648,4 +738,7 @@ if __name__ == '__main__':
     # example_s3(scorer=scorer)
     # cal_scores_for_realsumm(scorer)
     # cal_scores_realsumm_from_dir(scorer)
-    batch_cal_scores_realsumm_from_txt(scorer=scorer)
+    # batch_cal_scores_realsumm_from_txt(scorer=scorer)
+    # example_js_eval(scorer=scorer)
+    example_s3(scorer=scorer)
+    # example_js_eval(scorer=scorer)
