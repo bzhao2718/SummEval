@@ -13,7 +13,7 @@ import os
 
 def default_args(parser):
     all_metrics = "rouge, bert_score, mover_score,chrf,meteor,bleu,cider,rouge_we,s3,stats,sms,summaqa,syntactic,supert,blanc"
-    metric2 = "chrf,meteor,bleu,cider,bert_score, mover_score,rouge,rouge_we"
+    metric2 = "bleu,chrf,meteor,cider,bert_score, mover_score,stats,sms"
     metric3 = "rouge_we"
     metric5 = "stats"
     metric4 = "sms"
@@ -27,7 +27,7 @@ def default_args(parser):
                         default="/Users/jackz/Google_Drive/GoogleDrive/MyRepo/SummEval/evaluation/examples/basic.config",
                         help='config file with metric parameters')
 
-    parser.add_argument('--metrics', type=str, default=m_rerun2, help='comma-separated string of metrics')
+    parser.add_argument('--metrics', type=str, default=metric2, help='comma-separated string of metrics')
     parser.add_argument('--aggregate', type=bool, help='whether to aggregate scores')
     # parser.add_argument('--jsonl-file', default="external/data_annotations/model_annotations.aligned.paired.jsonl", type=str, help='input jsonl file to score')
 
@@ -256,7 +256,7 @@ def cli_main():
     if "spacy" in toks_needed:
         nlp = spacy.load('en_core_web_sm')
         # nlp = spacy.load('en_core_web_md')
-        disable = ["tagger", "textcat"]
+        disable = ["tagger", "textcat","lemmatizer"]
         if "summaqa" not in metrics:
             disable.append("ner")
         if isinstance(summaries[0], list):

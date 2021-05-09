@@ -42,8 +42,10 @@ class DataStatsMetric(Metric):
         if self.tokenize:
             # _en = spacy.load("en_core_web_sm")
             input_text = _en(input_text, disable=["tagger", "parser", "ner", "textcat"])
+            # input_text = _en(input_text, disable=["parser", "ner", "textcat"])
             input_text = [tok.text for tok in input_text]
             summary = _en(summary, disable=["tagger", "parser", "ner", "textcat"])
+            # summary = _en(summary, disable=["parser", "ner", "textcat"])
             summary = [tok.text for tok in summary]
         fragments = Fragments(summary, input_text, case=self.case)
         coverage = fragments.coverage()
